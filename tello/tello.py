@@ -83,6 +83,12 @@ class Tello:
     # Hardware can be 'TELLO' or 'RMTT'
     hardware = None
 
+    set_speed = {
+        "low": 10,
+        "mid": 50,
+        "high": 100
+    }
+
     def __init__(self, tello_ip=TELLO_IP, retry_count=RETRY_COUNT):
         """
         Tello object initialization
@@ -342,6 +348,56 @@ class Tello:
 
         return state_dict
 
+    def __check_sdk_mode(self):
+        """Check if the drone is set in SDK mode
+        """
+
+        if self.sdk_mode_enable:
+            pass
+        else:
+            message = f'Enable SDK mode with connect() function.'
+            self.LOGGER.error(message)
+            raise ValueError(message)
+
+    def __check_sdk_version(self, version):
+        """Check sdk version base on given version
+        """
+
+        if self.sdk_version == version:
+            pass
+        else:
+            message = f'Unsupported function for the current SDK version {self.sdk_version}'
+            self.LOGGER.error(message)
+            raise ValueError(message)
+
+    def __check_hardware(self, hardware):
+        """Check hardware type
+        """
+
+        if self.hardware == hardware:
+            pass
+        else:
+            message = f'Unsupported hardware: "{self.hardware}"'
+            self.LOGGER.error(message)
+            raise ValueError(message)
+
+    def __convertion_fail(sefl, field='field', data_type='data type'):
+        """Log convertion error
+        """
+
+        self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
+
+    def __read_command_fail(self, field='field'):
+        """Log read command fail
+        """
+
+        self.LOGGER.error(f'Failure to get {field}')
+
+    def __set_command_fail(self, field='field'):
+        """Log set command fail
+        """
+
+        self.LOGGER.error(f'Failure to set {field}')
 
     def get_speed(self):
         """
@@ -353,18 +409,18 @@ class Tello:
         field = "speed"
         data_type = "float"
 
-        if self.sdk_mode_enable:
-
+        try:
+            self.__check_sdk_mode()
             speed = self.__send_command_and_return('speed?')
 
             try:
                 speed = float(speed)
                 return speed
             except:
-                self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
+                self.__convertion_fail(field, data_type)
                 return -1
-        else:
-            self.LOGGER.error(f'Failure to obtain {field}. Enable SDK mode with connect() function.')
+        except:
+            self.__read_command_fail(field)
     
     def get_battery(self):
         """
@@ -376,18 +432,18 @@ class Tello:
         field = "battery"
         data_type = "int"
 
-        if self.sdk_mode_enable:
-
+        try:
+            self.__check_sdk_mode()
             battery = self.__send_command_and_return('battery?')
 
             try:
                 battery = int(battery)
                 return battery
             except:
-                self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
+                self.__convertion_fail(field, data_type)
                 return -1
-        else:
-            self.LOGGER.error(f'Failure to obtain {field}. Enable SDK mode with connect() function.')
+        except:
+            self.__read_command_fail(field)
 
     def get_flight_time(self):
         """
@@ -399,8 +455,8 @@ class Tello:
         field = "time"
         data_type = "int"
 
-        if self.sdk_mode_enable:
-
+        try:
+            self.__check_sdk_mode()
             time = self.__send_command_and_return('time?')
 
             try:
@@ -409,11 +465,10 @@ class Tello:
                 time = int(time)
                 return time
             except:
-                self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
+                self.__convertion_fail(field, data_type)
                 return -1
-        else:
-            self.LOGGER.error(f'Failure to obtain {field}. Enable SDK mode with connect() function.')
-
+        except:
+            self.__read_command_fail(field)
 
     def get_wifi_snr(self):
         """
@@ -425,18 +480,18 @@ class Tello:
         field = "Wi-Fi SNR"
         data_type = "str"
 
-        if self.sdk_mode_enable:
-
+        try:
+            self.__check_sdk_mode()
             wifi = self.__send_command_and_return('wifi?')
 
             try:
                 wifi = str(wifi)
                 return wifi
             except:
-                self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
+                self.__convertion_fail(field, data_type)
                 return -1
-        else:
-            self.LOGGER.error(f'Failure to obtain {field}. Enable SDK mode with connect() function.')
+        except:
+            self.__read_command_fail(field)
 
     def get_sdk_version(self):
         """
@@ -450,18 +505,18 @@ class Tello:
         field = "SDK version"
         data_type = "int"
 
-        if self.sdk_mode_enable:
-
+        try:
+            self.__check_sdk_mode()
             sdk = self.__send_command_and_return('sdk?')
 
             try:
                 sdk = int(sdk)
                 return sdk
             except:
-                self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
+                self.__convertion_fail(field, data_type)
                 return -1
-        else:
-            self.LOGGER.error(f'Failure to obtain {field}. Enable SDK mode with connect() function.')
+        except:
+            self.__read_command_fail(field)
 
     def get_serial(self):
         """
@@ -473,19 +528,18 @@ class Tello:
         field = "serial number"
         data_type = "str"
 
-        if self.sdk_mode_enable:
-
+        try:
+            self.__check_sdk_mode()
             serial = self.__send_command_and_return('sn?')
 
             try:
                 serial = str(serial)
                 return serial
             except:
-                self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
+                self.__convertion_fail(field, data_type)
                 return -1
-        else:
-            self.LOGGER.error(f'Failure to obtain {field}. Enable SDK mode with connect() function.')
-
+        except:
+            self.__read_command_fail(field)
     
     def get_hardware(self):
         """
@@ -499,22 +553,20 @@ class Tello:
         field = "hardware"
         data_type = "str"
 
-        if self.sdk_mode_enable:
+        try:
+            self.__check_sdk_mode()
+            self.__check_sdk_version(30)
 
-            if self.sdk_version == 30:
-
-                hardware = self.__send_command_and_return('hardware?')
-
-                try:
-                    hardware = str(hardware)
-                    return hardware
-                except:
-                    self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
-                    return -1
-            else:
-                self.LOGGER.error(f'Unsupported function for the current SDK version {self.sdk_version}')
-        else:
-            self.LOGGER.error(f'Failure to obtain {field}. Enable SDK mode with connect() function.')
+            hardware = self.__send_command_and_return('hardware?')
+            
+            try:
+                hardware = str(hardware)
+                return hardware
+            except:
+                self.__convertion_fail(field, data_type)
+                return -1
+        except:
+            self.__read_command_fail(field)
 
     def get_wifi_version(self):
         """
@@ -528,23 +580,20 @@ class Tello:
         field = "wifi version"
         data_type = "str"
 
-        if self.sdk_mode_enable:
+        try:
+            self.__check_sdk_mode()
+            self.__check_hardware('RMTT')
 
-            if self.hardware == 'RMTT':
-
-                wifi_version = self.__send_command_and_return('wifiversion?')
-
-                try:
-                    wifi_version = str(wifi_version)
-                    return wifi_version
-                except:
-                    self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
-                    return -1
-            else:
-                self.LOGGER.error(f'Unsupported hardware: "{self.hardware}"')
-        else:
-            self.LOGGER.error(f'Failure to obtain {field}. Enable SDK mode with connect() function.')
-
+            wifi_version = self.__send_command_and_return('wifiversion?')
+            
+            try:
+                wifi_version = str(wifi_version)
+                return wifi_version
+            except:
+                self.__convertion_fail(field, data_type)
+                return -1
+        except:
+            self.__read_command_fail(field)
     
     def get_ap(self):
         """
@@ -556,23 +605,21 @@ class Tello:
         field = "name and password"
         data_type = "str"
 
-        if self.sdk_mode_enable:
+        try:
+            self.__check_sdk_mode()
+            self.__check_hardware('RMTT')
 
-            if self.hardware == 'RMTT':
+            ap = self.__send_command_and_return('ap?')
+            
+            try:
+                ap = str(ap)
+                return ap
+            except:
+                self.__convertion_fail(field, data_type)
+                return -1
+        except:
+            self.__read_command_fail(field)
 
-                ap = self.__send_command_and_return('ap?')
-
-                try:
-                    ap = str(ap)
-                    return ap
-                except:
-                    self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
-                    return -1
-            else:
-                self.LOGGER.error(f'Unsupported hardware: "{self.hardware}"')
-        else:
-            self.LOGGER.error(f'Failure to obtain {field}. Enable SDK mode with connect() function.')
-    
     def get_ssid(self):
         """
         Get the current SSID of the drone
@@ -583,19 +630,29 @@ class Tello:
         field = "SSID"
         data_type = "str"
 
-        if self.sdk_mode_enable:
+        try:
+            self.__check_sdk_mode()
+            self.__check_hardware('RMTT')
 
-            if self.hardware == 'RMTT':
+            ssid = self.__send_command_and_return('ssid?')
+            
+            try:
+                ssid = str(ssid)
+                return ssid
+            except:
+                self.__convertion_fail(field, data_type)
+                return -1
+        except:
+            self.__read_command_fail(field)
+    
+    def set_speed(self, speed=set_speed["mid"]):
+        """Set the current speed in cm/s
+        """
 
-                ssid = self.__send_command_and_return('ssid?')
+        field = 'speed'
 
-                try:
-                    ssid = str(ssid)
-                    return ssid
-                except:
-                    self.LOGGER.error(f'Failure to convert {field} value to {data_type}')
-                    return -1
-            else:
-                self.LOGGER.error(f'Unsupported hardware: "{self.hardware}"')
-        else:
-            self.LOGGER.error(f'Failure to obtain {field}. Enable SDK mode with connect() function.')
+        try:
+            self.__check_sdk_mode()
+            print(speed)
+        except:
+            self.__set_command_fail(field)
