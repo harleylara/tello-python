@@ -96,6 +96,26 @@ class Tello:
         "high": 100
     }
 
+    SET_FPS = (
+        "high",
+        "middle",
+        "low"
+    )
+
+    SET_BITRATE = (
+        0,  # auto
+        1,  # 1Mbps
+        2,  # 2Mbps
+        3,  # 3Mbps
+        4,  # 4Mbps
+        5   # 5Mbps
+    )
+
+    SET_RESOLUTION = (
+        "high"  # 720p
+        "low"   # 480p
+    )
+
     def __init__(self, tello_ip=TELLO_IP, retry_count=RETRY_COUNT):
         """
         Tello object initialization
@@ -712,18 +732,21 @@ class Tello:
             self.__set_command_fail(field)
 
     def set_mission_detection(self, direction):
-        """Set move direction on mission mode enable
+        """Set detection direction on mission mode enable
 
         The detection frequency is 20 Hz if only the forward or
         downward detection is enable. If both, forward and downward
         detection are enable, the detection frequency is 10 Hz.
 
-        :param direction:   'downward' Enable downward detection only
-                            'forward' Enable forward detection only
-                            'both' Enable both, forward and downward detection
+        :param direction: set direction of detection
         :type direction: str
-
         """
+
+        options = """
+        Options:
+            'downward' - Enable downward detection only
+            'forward'  - Enable forward detection only
+            'both'     - Enable both, forward and downward detection"""
 
         field = 'mdirection'
 
@@ -736,10 +759,7 @@ class Tello:
                 else:
                     self.LOGGER.error("Perform set_mission_on() before set this command")
             else:
-                self.LOGGER.error("""invalid parameter
-                direction:  'downward' Enable downward detection only
-                            'forward' Enable forward detection only
-                            'both' Enable both, forward and downward detection""")
+                self.LOGGER.error(f"invalid parameter. {options}")
         except:
             self.__set_command_fail(field)
 
@@ -761,3 +781,120 @@ class Tello:
             self.__send_command_and_return(f'app {ssid} {password}')
         except:
             self.__set_command_fail(field)
+
+    def set_wifi_channel(self, channel):
+        """Set the Wi-Fi channel of the open-source controller
+        This function only applies to the open-source controller
+
+        :param channel: channel to be set
+        :type channel: str
+        """
+
+        field = 'Wi-Fi channel'
+
+        try:
+            self.__check_sdk_mode()
+            self.__check_hardware('RMTT')
+            self.__send_command_and_return(f'wifisetchannel {channel}')
+        except:
+            self.__set_command_fail(field)
+
+    def set_video_port(self, info, video):
+        """Set the ports for pushing status information and video streams.
+
+        The range of ports is 1025 to 65535
+
+        :param info: port for pushing status information
+        :type info: str
+
+        :param video: port for pushing video information
+        :type vedio: str
+        """
+
+        field = 'ports settings'
+
+        try:
+            self.__check_sdk_mode()
+            self.__check_sdk_version(30)
+            self.__send_command_and_return(f'port {info} {video}')
+        except:
+            self.__set_command_fail(field)
+
+    def set_fps(self, fps=SET_FPS[0]):
+        """Set video stream frame rate.
+
+        :param fps: Frames per second
+        :type fps: str
+        """
+
+        options = """
+        Options:    
+            "high"    - indicating 30fps (default)
+            "middle"  - indicating 15ps
+            "low"     - indicating 5fps"""
+
+        field = 'fps'
+
+        try:
+            self.__check_sdk_mode()
+            self.__check_sdk_version(30)
+
+            if fps in self.SET_FPS:
+                self.__send_command_and_return(f'setfps {fps}')
+            else:
+                self.LOGGER.error(f"No option '{fps}'. {options}")
+        except:
+            self.__set_command_fail(field)
+
+    def set_bitrate(self, bitrate=SET_BITRATE[0]):
+        """Set the video stream bit rate.
+
+        :param bitrate: bitrate parameter
+        :type bitrate: int
+        """
+
+        options = """
+        Options:    
+            0 - auto
+            1 - 1Mbps
+            2 - 2Mbps
+            3 - 3Mbps
+            4 - 4Mbps
+            5 - 5Mbps"""
+
+        field = 'bitrate'
+
+        try:
+            self.__check_sdk_mode()
+            self.__check_sdk_version(30)
+
+            if bitrate in self.SET_BITRATE:
+                self.__send_command_and_return(f'setbitrate {bitrate}')
+            else:
+                self.LOGGER.error(f"No option '{bitrate}'. {options}")
+        except:
+            self.__set_command_fail(field)
+
+    def set_resolution(self, resolution=SET_RESOLUTION[0]):
+        """
+        """
+
+        options = """
+        Options:    
+            "high" - 720p
+            "low"  - 480p"""
+
+        field = 'resolution'
+
+        try:
+            self.__check_sdk_mode()
+            self.__check_sdk_version(30)
+
+            if resolution in self.SET_RESOLUTION:
+                self.__send_command_and_return(f'setresolution {resolution}')
+            else:
+                self.LOGGER.error(f"No option '{resolution}'. {options}")
+        except:
+            self.__set_command_fail(field)
+
+

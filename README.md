@@ -23,9 +23,7 @@ drone.connect()
 
 ### Control Commands
 
-
 ### Set Commnands
-
 
 - `set_speed(speed=50)`
 - `set_wifi(ssid='WIFI name', password='pass')`
@@ -33,6 +31,8 @@ drone.connect()
 - `set_mission_off()`
 - `set_mission_detection(direction)`
 - `set_ap(ssid='Access point name', password='pass')`
+- `set_wifi_channerl(channel)` SDK 3.0 (Only for Robotmaster TT hardware)
+- `set_video_port(info='1234', video='5678')`
 
 ### Read Commands
 
