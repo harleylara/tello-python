@@ -23,16 +23,34 @@ drone.connect()
 
 ### Control Commands
 
+
 ### Set Commnands
 
-- `set_speed(speed=50)`
-- `set_wifi(ssid='WIFI name', password='pass')`
+- `set_speed(50)`
+    - parameters: `speed`
+- `set_wifi('WIFI name', 'pass')`
+    - parameters: `ssid`, `password`
 - `set_mission_on()`
 - `set_mission_off()`
-- `set_mission_detection(direction)`
-- `set_ap(ssid='Access point name', password='pass')`
+- `set_mission_detection(0)`
+    - parameters: `direction` 0: downward detection enabled. 1: forward detection enabled. 2: both forward and downward detection enabled
+- `set_ap('Access point name', 'pass')`
+    - parameters: `ssid`, `password`
 - `set_wifi_channerl(channel)` SDK 3.0 (Only for Robotmaster TT hardware)
+    - parameters: `channel`
+    - only supported on SDK 3.0
 - `set_video_port(info='1234', video='5678')`
+    - parameters: `info`, `video`
+    - only supported on SDK 3.0
+- `set_fps("high")` can be `"high"`, `"middle"`, or `"low"`, indicating 30fps, 15fps, and 5fps, respectively
+    - parameters: `fps`
+    - only supported on SDK 3.0
+- `set_bitrate(0)` value range from 0 to 5 (int) indicating auto, 1Mbps, 2MBps, 3Mbps, 4Mbps, and 5Mbps, respectively
+    - parameters: `bitrate`
+    - only supported on SDK 3.0
+- `set_resolution("high")` can be "high" or "low", indicating 720P and 480P, respectively
+    - parameters: `resolution`
+    - only supported on SDK 3.0
 
 ### Read Commands
 
