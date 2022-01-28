@@ -27,6 +27,13 @@ drone.connect()
 ### Set Commnands
 
 
+- `set_speed(speed=50)`
+- `set_wifi(ssid='WIFI name', password='pass')`
+- `set_mission_on()`
+- `set_mission_off()`
+- `set_mission_detection(direction)`
+- `set_ap(ssid='Access point name', password='pass')`
+
 ### Read Commands
 
 | Function             | Description                                                                                        | Return | SDK 2.0 | SDK 3.0 |

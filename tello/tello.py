@@ -83,7 +83,14 @@ class Tello:
     # Hardware can be 'TELLO' or 'RMTT'
     hardware = None
 
-    set_speed = {
+    mission_mode_enable = False
+    MISSION_DETECTION_DIRECTION = {
+        'downward': 0,
+        'forward': 1,
+        'both': 2,
+    }
+
+    SET_SPEED = {
         "low": 10,
         "mid": 50,
         "high": 100
@@ -160,7 +167,7 @@ class Tello:
             self.LOGGER.debug(f'Waiting {diff} seconds to execute command: {command}...')
             time.sleep(diff)
 
-        self.LOGGER.info(f"Send command: '{command}'")
+        self.LOGGER.debug(f"Send command: '{command}'")
         timestamp = time.time()
 
         client_socket.sendto(command.encode('utf-8'), self.address)
@@ -403,7 +410,7 @@ class Tello:
         """
         Obtain set speed (cm/s) (This is not the current speed)
 
-        :return (float): speed in cm/s in a range from 10 to 100
+        :return (float): speed (cm/s) in a range from 10 to 100
         """
 
         field = "speed"
@@ -645,14 +652,112 @@ class Tello:
         except:
             self.__read_command_fail(field)
     
-    def set_speed(self, speed=set_speed["mid"]):
-        """Set the current speed in cm/s
+    def set_speed(self, speed=SET_SPEED["mid"]):
+        """Set the current speed (cm/s) in range from 10 to 100
+
+        :param speed: speed in cm/s
+        :type speed: float
         """
 
         field = 'speed'
 
         try:
             self.__check_sdk_mode()
-            print(speed)
+            self.__send_command_and_return(f'speed {speed}')
+        except:
+            self.__set_command_fail(field)
+
+    def set_wifi(self, ssid, password):
+        """Set Wi-Fi name (SSID) and password
+
+        :param ssid: Wi-Fi name
+        :type speed: str
+
+        :param password: Wi-Fi password
+        :type password: str
+        """
+
+        field = 'SSID and password'
+
+        try:
+            self.__check_sdk_mode()
+            self.__send_command_and_return(f'wifi {ssid} {password}')
+        except:
+            self.__set_command_fail(field)
+
+    def set_mission_on(self):
+        """Enable mission pad detection (forward and downward)
+        """
+
+        field = 'mon'
+
+        try:
+            self.__check_sdk_mode()
+            self.__send_command_and_return(f'mon')
+            self.mission_mode_enable = True
+        except:
+            self.__set_command_fail(field)
+    
+    def set_mission_off(self):
+        """Disable mission pad detection
+        """
+
+        field = 'moff'
+
+        try:
+            self.__check_sdk_mode()
+            self.__send_command_and_return(f'moff')
+            self.mission_mode_enable = False
+        except:
+            self.__set_command_fail(field)
+
+    def set_mission_detection(self, direction):
+        """Set move direction on mission mode enable
+
+        The detection frequency is 20 Hz if only the forward or
+        downward detection is enable. If both, forward and downward
+        detection are enable, the detection frequency is 10 Hz.
+
+        :param direction:   'downward' Enable downward detection only
+                            'forward' Enable forward detection only
+                            'both' Enable both, forward and downward detection
+        :type direction: str
+
+        """
+
+        field = 'mdirection'
+
+        try:
+            self.__check_sdk_mode()
+
+            if direction in self.MISSION_DETECTION_DIRECTION:
+                if self.mission_mode_enable:
+                    self.__send_command_and_return(f'mdirection {direction}')
+                else:
+                    self.LOGGER.error("Perform set_mission_on() before set this command")
+            else:
+                self.LOGGER.error("""invalid parameter
+                direction:  'downward' Enable downward detection only
+                            'forward' Enable forward detection only
+                            'both' Enable both, forward and downward detection""")
+        except:
+            self.__set_command_fail(field)
+
+    def set_ap(self, ssid, password):
+        """Set the Tello to station mode, and connect to a
+        new acces point with the access point's ssid and password
+
+        :param ssid: Access point name
+        :type ssid: str
+
+        :param password: Access point password
+        :type password: str
+        """
+
+        field = 'ap'
+
+        try:
+            self.__check_sdk_mode()
+            self.__send_command_and_return(f'app {ssid} {password}')
         except:
             self.__set_command_fail(field)
