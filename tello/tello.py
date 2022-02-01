@@ -70,7 +70,7 @@ class Tello:
 
     # Logger
     HANDLER = logging.StreamHandler()
-    FORMATTER = logging.Formatter('%(asctime)s [%(levelname)s] %(filename)s - %(lineno)d - %(message)s')
+    FORMATTER = logging.Formatter('%(asctime)s [%(levelname)s] %(filename)s - %(message)s')
     HANDLER.setFormatter(FORMATTER)
 
     LOGGER = logging.getLogger('tello-drone')
@@ -96,24 +96,51 @@ class Tello:
         "high": 100
     }
 
+    SPEED_RANGE = (
+        10,
+        100
+    )
+    
     SET_FPS = (
         "high",
         "middle",
         "low"
     )
 
-    SET_BITRATE = (
-        0,  # auto
-        1,  # 1Mbps
-        2,  # 2Mbps
-        3,  # 3Mbps
-        4,  # 4Mbps
-        5   # 5Mbps
-    )
+    SET_BITRATE = {
+        "auto": 0,  # auto
+        '1': 1,  # 1Mbps
+        '2': 2,  # 2Mbps
+        '3': 3,  # 3Mbps
+        '4': 4,  # 4Mbps
+        '5': 5   # 5Mbps
+    }
 
     SET_RESOLUTION = (
         "high"  # 720p
         "low"   # 480p
+    )
+
+    DISTANCE_RANGE = ( # in centimeters
+        20,     # lower value
+        500,    # higher value
+    )
+
+    ANGLE_RANGE = ( # in degrees
+        0,     # lower value
+        360,    # higher value
+    )
+
+    FLIP_DIRECTION = {
+        "left": "l",
+        "right": "r",
+        "forward": "f",
+        "backward": "b"
+    }
+
+    COORDINATES_RANGE = (
+        -500,
+        500
     )
 
     def __init__(self, tello_ip=TELLO_IP, retry_count=RETRY_COUNT):
@@ -142,17 +169,10 @@ class Tello:
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
             client_socket.bind((self.LOCAL_IP, self.TELLO_PORT))
 
-            # thread for send control commands
             # __receive_thread callback for responses
             self.cmd_receive_thread = Thread(target=self.__receive_thread)
             self.cmd_receive_thread.daemon = True
             self.cmd_receive_thread.start()
-
-            # State UDP receiver thread
-            # _state_thread callback for read Tello State
-            self.state_receiver_thread = Thread(target=self.__state_thread)
-            self.state_receiver_thread.daemon = True
-            self.state_receiver_thread.start()
 
             threads_initialized = True
 
@@ -265,6 +285,11 @@ class Tello:
             battery = self.get_battery()
             self.LOGGER.info(f'Battery percentage: {battery}')
 
+            # Init State server thread
+            # _state_thread callback for read Tello State
+            self.state_receiver_thread = Thread(target=self.__state_thread)
+            self.state_receiver_thread.daemon = True
+            self.state_receiver_thread.start()
         else:
             self.LOGGER.error('Fail to enter in SDK mode. Try again')
 
@@ -332,12 +357,13 @@ class Tello:
                 if address not in drones:
                     continue
 
-                response = response.decode('utf-8')
+                response = response.decode('ASCII')
                 drones[address]['state'] = self.__state_parse(response)
 
             except Exception as e:
                 self.LOGGER.error(e)
                 break
+            time.sleep(0.2)
 
     def __state_parse(state: str) -> Dict[str, Union[int, float, str]]:
         """Parse a state line to a dictionary
@@ -408,7 +434,7 @@ class Tello:
             self.LOGGER.error(message)
             raise ValueError(message)
 
-    def __convertion_fail(sefl, field='field', data_type='data type'):
+    def __convertion_fail(self, field='field', data_type='data type'):
         """Log convertion error
         """
 
@@ -425,6 +451,12 @@ class Tello:
         """
 
         self.LOGGER.error(f'Failure to set {field}')
+
+    def __control_command_fail(self, field='field'):
+        """Log control command fail
+        """
+
+        self.LOGGER.error(f'Failure to send control command {field}')
 
     def get_speed(self):
         """
@@ -683,7 +715,10 @@ class Tello:
 
         try:
             self.__check_sdk_mode()
-            self.__send_command_and_return(f'speed {speed}')
+            if self.__check_in_range(speed, self.SPEED_RANGE):
+                self.__send_command_and_return(f'speed {speed}')
+            else:
+                self.__value_out_range(self.SPEED_RANGE)
         except:
             self.__set_command_fail(field)
 
@@ -701,6 +736,7 @@ class Tello:
 
         try:
             self.__check_sdk_mode()
+            ssid = ssid.replace(' ', '-')
             self.__send_command_and_return(f'wifi {ssid} {password}')
         except:
             self.__set_command_fail(field)
@@ -755,11 +791,11 @@ class Tello:
 
             if direction in self.MISSION_DETECTION_DIRECTION:
                 if self.mission_mode_enable:
-                    self.__send_command_and_return(f'mdirection {direction}')
+                    self.__send_command_and_return(f'mdirection {self.MISSION_DETECTION_DIRECTION[direction]}')
                 else:
                     self.LOGGER.error("Perform set_mission_on() before set this command")
             else:
-                self.LOGGER.error(f"invalid parameter. {options}")
+                self.__invalid_option(options)
         except:
             self.__set_command_fail(field)
 
@@ -823,7 +859,7 @@ class Tello:
     def set_fps(self, fps=SET_FPS[0]):
         """Set video stream frame rate.
 
-        :param fps: Frames per second
+        :param fps: Frames per second (Default high)
         :type fps: str
         """
 
@@ -842,11 +878,11 @@ class Tello:
             if fps in self.SET_FPS:
                 self.__send_command_and_return(f'setfps {fps}')
             else:
-                self.LOGGER.error(f"No option '{fps}'. {options}")
+                self.__invalid_option(options)
         except:
             self.__set_command_fail(field)
 
-    def set_bitrate(self, bitrate=SET_BITRATE[0]):
+    def set_bitrate(self, bitrate=SET_BITRATE['auto']):
         """Set the video stream bit rate.
 
         :param bitrate: bitrate parameter
@@ -855,28 +891,31 @@ class Tello:
 
         options = """
         Options:    
-            0 - auto
-            1 - 1Mbps
-            2 - 2Mbps
-            3 - 3Mbps
-            4 - 4Mbps
-            5 - 5Mbps"""
+            'auto' - auto
+            '1' - 1Mbps
+            '2' - 2Mbps
+            '3' - 3Mbps
+            '4' - 4Mbps
+            '5' - 5Mbps"""
 
         field = 'bitrate'
 
         try:
             self.__check_sdk_mode()
             self.__check_sdk_version(30)
-
+            bitrate = str(bitrate)
             if bitrate in self.SET_BITRATE:
-                self.__send_command_and_return(f'setbitrate {bitrate}')
+                self.__send_command_and_return(f'setbitrate {self.SET_BITRATE[bitrate]}')
             else:
-                self.LOGGER.error(f"No option '{bitrate}'. {options}")
+                self.__invalid_option(options)
         except:
             self.__set_command_fail(field)
 
     def set_resolution(self, resolution=SET_RESOLUTION[0]):
-        """
+        """Set the video stream resolution.
+
+        The resolution parameter specifies the resolution, whose value
+        can be "high" or "low", indicating 720P and 480P, respectively.
         """
 
         options = """
@@ -893,8 +932,274 @@ class Tello:
             if resolution in self.SET_RESOLUTION:
                 self.__send_command_and_return(f'setresolution {resolution}')
             else:
-                self.LOGGER.error(f"No option '{resolution}'. {options}")
+                self.__invalid_option(options)
         except:
             self.__set_command_fail(field)
 
+    def takeoff(self):
+        """Auto takeoff
+        """
 
+        field = "takeoff"
+
+        try:
+            self.__check_sdk_mode()
+            self.__send_command_and_return(f'takeoff')
+        except:
+            self.__control_command_fail(field)
+
+    def land(self):
+        """Auto landing
+        """
+
+        field = "land"
+
+        try:
+            self.__check_sdk_mode()
+            self.__send_command_and_return(f'land')
+        except:
+            self.__control_command_fail(field)
+
+    def stream_on(self):
+        """Enables video stream
+        """
+
+        field = "stream on"
+
+        try:
+            self.__check_sdk_mode()
+            response = self.__send_command_and_return(f'streamon')
+            if response:
+                self.LOGGER.info('Video stream enabled')
+        except:
+            self.__control_command_fail(field)
+
+    def stream_off(self):
+        """Disables video stream
+        """
+
+        field = "stream off"
+
+        try:
+            self.__check_sdk_mode()
+            response = self.__send_command_and_return(f'streamoff')
+            if response:
+                self.LOGGER.info('Video stream disabled')
+        except:
+            self.__control_command_fail(field)
+
+    def emergency(self):
+        """Stop Motors immediately
+        """
+
+        field = "emergency"
+
+        try:
+            self.__check_sdk_mode()
+            response = self.__send_command_and_return(f'emergency')
+        except:
+            self.__control_command_fail(field)
+
+    def __value_out_range(self, range, value_name=''):
+        """Logs out of range message
+        """
+        msg = f'Range from {range[0]} to {range[1]}'
+        if value_name == '':
+            self.LOGGER.error(f'Value out of range. {msg}')
+        else:
+            self.LOGGER.error(f'Value "{value_name}" out of range. {msg}')
+
+    def __invalid_option(self, options):
+        """Logs options
+        """
+        self.LOGGER.error(f'Invalid parameter. {options}')
+    
+    def __check_in_range(self, value, range):
+        """Check if value is on range
+
+        :param value: value to check
+        :param range: list values (range)
+        """
+        if value >= range[0] and value <= range[1]:
+            return True
+        else:
+            return False
+
+    def move_up(self, distance):
+        """Ascend given distance in centimeters
+        """
+
+        field = "move up"
+
+        try:
+            self.__check_sdk_mode()
+            if self.__check_in_range(distance, self.DISTANCE_RANGE):
+                response = self.__send_command_and_return(f'up {distance}')
+            else:
+                self.__value_out_range(self.DISTANCE_RANGE)
+        except:
+            self.__control_command_fail(field)
+
+    def move_down(self, distance):
+        """Descend given distance in centimeters
+        """
+
+        field = "move down"
+
+        try:
+            self.__check_sdk_mode()
+            if self.__check_in_range(distance, self.DISTANCE_RANGE):
+                response = self.__send_command_and_return(f'down {distance}')
+            else:
+                self.__value_out_range(self.DISTANCE_RANGE)
+        except:
+            self.__control_command_fail(field)
+    
+    def move_left(self, distance):
+        """Fly left given distance in centimeters
+        """
+
+        field = "move left"
+
+        try:
+            self.__check_sdk_mode()
+            if self.__check_in_range(distance, self.DISTANCE_RANGE):
+                response = self.__send_command_and_return(f'left {distance}')
+            else:
+                self.__value_out_range(self.DISTANCE_RANGE)
+        except:
+            self.__control_command_fail(field)
+
+    def move_right(self, distance):
+        """Fly right given distance in centimeters
+        """
+
+        field = "move right"
+
+        try:
+            self.__check_sdk_mode()
+            if self.__check_in_range(distance, self.DISTANCE_RANGE):
+                response = self.__send_command_and_return(f'right {distance}')
+            else:
+                self.__value_out_range(self.DISTANCE_RANGE)
+        except:
+            self.__control_command_fail(field)
+    
+    def move_forward(self, distance):
+        """Moves forward given distance in centimeters
+        """
+
+        field = "move forward"
+
+        try:
+            self.__check_sdk_mode()
+            if self.__check_in_range(distance, self.DISTANCE_RANGE):
+                response = self.__send_command_and_return(f'forward {distance}')
+            else:
+                self.__value_out_range(self.DISTANCE_RANGE)
+        except:
+            self.__control_command_fail(field)
+    
+    def move_backward(self, distance):
+        """Moves backward given distance in centimeters
+        """
+
+        field = "move backward"
+
+        try:
+            self.__check_sdk_mode()
+            if self.__check_in_range(distance, self.DISTANCE_RANGE):
+                response = self.__send_command_and_return(f'back {distance}')
+            else:
+                self.__value_out_range(self.DISTANCE_RANGE)
+        except:
+            self.__control_command_fail(field)
+    
+    def move_clockwise(self, angle):
+        """Rotates clockwise given angle in degrees
+        """
+
+        field = "rotate clockwise"
+
+        try:
+            self.__check_sdk_mode()
+            if self.__check_in_range(distance, self.ANGLE_RANGE):
+                response = self.__send_command_and_return(f'cw {distance}')
+            else:
+                self.__value_out_range(self.ANGLE_RANGE)
+        except:
+            self.__control_command_fail(field)
+    
+    def move_counterclockwise(self, angle):
+        """Rotates counterclockwise given angle in degrees
+        """
+
+        field = "rotate counterclockwise"
+
+        try:
+            self.__check_sdk_mode()
+            if self.__check_in_range(distance, self.ANGLE_RANGE):
+                response = self.__send_command_and_return(f'ccw {distance}')
+            else:
+                self.__value_out_range(self.ANGLE_RANGE)
+        except:
+            self.__control_command_fail(field)
+
+    def flip(self, direction):
+        """Flip given direction
+        """
+
+        options = """
+        Options:    
+            "left"
+            "right"
+            "forward"
+            "backward" """
+
+        field = "flip"
+
+        try:
+            self.__check_sdk_mode()
+            if direction in self.FLIP_DIRECTION:
+                self.__send_command_and_return(f'flip {self.FLIP_DIRECTION[direction]}')
+            else:
+                self.__invalid_option(options)
+        except:
+            self.__control_command_fail(field)
+    
+    def go_to(self, x, y, z, speed):
+        """Fly to given coordinates at given speed.
+
+        The coordinates are relative to the current position.
+        """
+
+        field = "go to"
+
+        try:
+            self.__check_sdk_mode()
+            _1 = self.__check_in_range(speed, self.SPEED_RANGE)
+            _2 = self.__check_in_range(x, self.COORDINATES_RANGE)
+            _3 = self.__check_in_range(y, self.COORDINATES_RANGE)
+            _4 = self.__check_in_range(z, self.COORDINATES_RANGE)
+
+            if (_1 and _2 and _3 and _4):
+                self.__send_command_and_return(f'go {x} {y} {z} {speed}')
+            elif _1 == False:
+                self.__value_out_range(self.SPEED_RANGE, 'speed')
+            elif (_2 and _3 and _4) == False:
+                self.LOGGER.error('Coordinates out of range.')
+                self.__value_out_range(self.COORDINATES_RANGE)
+        except:
+            self.__control_command_fail(field)
+
+    def move_arc(self, x, y, z, ):
+        """Hovers in the air
+        """
+
+        field = "hover"
+
+        #try:
+        #    self.__check_sdk_mode()
+        #    self.__send_command_and_return(f'stop')
+        #except:
+        #    self.__control_command_fail(field)
