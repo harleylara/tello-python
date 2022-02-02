@@ -992,6 +992,22 @@ class Tello:
         except:
             self.__control_command_fail(field)
 
+    def reboot(self):
+        """Reboot the drone. No response from function.
+        """
+
+        global client_socket
+
+        command = "reboot"
+
+        try:
+            self.__check_sdk_mode()
+            self.__check_sdk_version(30)
+            # direct command sending, without checking for response
+            client_socket.sendto(command.encode('utf-8'), self.address)
+        except:
+            self.__control_command_fail(command)
+
     def __value_out_range(self, range, value_name=''):
         """Logs out of range message
         """
