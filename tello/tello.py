@@ -16,6 +16,7 @@ drones: Optional[dict] = {}
 # UDP client for send commands and receive response
 client_socket: socket.socket
 
+
 class Tello:
 
     """Python Wrapper for 'Tello' drone, 'Tello EDU' and 'Robomaster TT'
@@ -34,15 +35,15 @@ class Tello:
     # Tello State
     # UDP por for receive Tello State
     STATE_UDP_PORT = 8890
-    
+
     # State fields in Int data type
     INT_STATE_FIELDS = (
         # Mission pads enabled only in Tello EDU
         'mid',                  # pad ID
         'x', 'y', 'z',          # cm
-        
+
         # Common entries
-        'pitch', 'roll', 'yaw', # degree
+        'pitch', 'roll', 'yaw',  # degree
         'vgx', 'vgy', 'vgz',    # cm/s
         'templ', 'temph',       # Celsius
         'tof', 'h',             # cm
@@ -52,31 +53,32 @@ class Tello:
 
     # State fields in Float data type
     FLOAT_STATE_FIELDS = (
-            'baro',             # cm
-            'agx', 'agy', 'agz' # cm/s^2
+        'baro',             # cm
+        'agx', 'agy', 'agz'  # cm/s^2
     )
 
     state_field_converters: Dict[str, Union[Type[int], Type[float]]]
-    state_field_converters = {key : int for key in INT_STATE_FIELDS}
-    state_field_converters.update({key : float for key in FLOAT_STATE_FIELDS})
+    state_field_converters = {key: int for key in INT_STATE_FIELDS}
+    state_field_converters.update({key: float for key in FLOAT_STATE_FIELDS})
 
     # Constants for failure handling
     TIMEOUT = 8
     TIME_BTW_COMMANDS = 0.1
     # number of retries after a failed command
-    RETRY_COUNT = 3 
+    RETRY_COUNT = 3
 
     client_socket_up = False
 
     # Logger
     HANDLER = logging.StreamHandler()
-    FORMATTER = logging.Formatter('%(asctime)s [%(levelname)s] %(filename)s - %(message)s')
+    FORMATTER = logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(filename)s - %(message)s')
     HANDLER.setFormatter(FORMATTER)
 
     LOGGER = logging.getLogger('tello-drone')
     LOGGER.addHandler(HANDLER)
     LOGGER.setLevel(logging.DEBUG)
-    
+
     sdk_mode_enable = False
     # SDK version can be 20 for 2.0 or 30 for 3.0
     sdk_version = None
@@ -100,7 +102,7 @@ class Tello:
         10,
         100
     )
-    
+
     SET_FPS = (
         "high",
         "middle",
@@ -121,12 +123,12 @@ class Tello:
         "low"   # 480p
     )
 
-    DISTANCE_RANGE = ( # in centimeters
+    DISTANCE_RANGE = (  # in centimeters
         20,     # lower value
         500,    # higher value
     )
 
-    ANGLE_RANGE = ( # in degrees
+    ANGLE_RANGE = (  # in degrees
         0,     # lower value
         360,    # higher value
     )
@@ -166,7 +168,7 @@ class Tello:
         if not threads_initialized:
 
             # socket for sending cmd
-            client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             client_socket.bind((self.LOCAL_IP, self.TELLO_PORT))
 
             # __receive_thread callback for responses
@@ -177,8 +179,8 @@ class Tello:
             threads_initialized = True
 
         drones[tello_ip] = {'responses': [], 'state': {}}
-        self.LOGGER.info(f"Tello instance was initialized. tello_ip: '{tello_ip}'. Port: '{self.TELLO_PORT}'.")
-
+        self.LOGGER.info(
+            f"Tello instance was initialized. tello_ip: '{tello_ip}'. Port: '{self.TELLO_PORT}'.")
 
     def __send_command_and_return(self, command: str, timeout: int = TIMEOUT):
         """
@@ -186,15 +188,15 @@ class Tello:
 
         If self.command_timeout is exceeded before a response is received,
         a RuntimeError exception is raised.
-        
+
         :param command: Command to send.
         :type command: str
 
         :param timeout: maximum waiting time in seconds to get response
         :type timeout: int
-        
+
         :return (str): response from Tello
-        
+
         :raise Exception: If no response is received within self.timeout seconds.
 
         """
@@ -202,20 +204,20 @@ class Tello:
         global client_socket
 
         diff = time.time() - self.last_received_command_timestamp
-        
+
         if diff < self.TIME_BTW_COMMANDS:
-            self.LOGGER.debug(f'Waiting {diff} seconds to execute command: {command}...')
+            self.LOGGER.debug(
+                f'Waiting {diff} seconds to execute command: {command}...')
             time.sleep(diff)
 
         self.LOGGER.debug(f"Send command: '{command}'")
         timestamp = time.time()
 
         client_socket.sendto(command.encode('utf-8'), self.address)
-        
+
         responses = self.__get_own_udp_object()['responses']
- 
+
         while not responses:
-            # ToDo Check responses
             if time.time() - timestamp > timeout:
                 message = f"Aborting command '{command}'. Did not receive a response after {timeout} seconds"
                 self.LOGGER.warning(message)
@@ -231,7 +233,7 @@ class Tello:
         except UnicodeDecodeError as e:
             self.LOGGER.error(e)
             return "response decode error"
-        
+
         response = response.rstrip("\r\n")
 
         self.LOGGER.debug(f"Response {command}: '{response}'")
@@ -239,7 +241,7 @@ class Tello:
 
     def __get_own_udp_object(self):
         """Get own object from the global drones dict. 
-        
+
         This object is filled with responses and state information by the receiver threads.
         """
         global drones
@@ -257,7 +259,8 @@ class Tello:
             if 'ok' in response.lower():
                 return True
 
-            self.LOGGER.debug(f"Command attempt #{i} failed for command: '{command}'")
+            self.LOGGER.debug(
+                f"Command attempt #{i} failed for command: '{command}'")
 
         self.LOGGER.error(f"Command '{command}' failed")
         return False
@@ -291,24 +294,12 @@ class Tello:
             self.state_receiver_thread.daemon = True
             self.state_receiver_thread.start()
         else:
-            self.LOGGER.error('Fail to enter in SDK mode. Try again')
+            self.LOGGER.error(
+                'Fail to enter in SDK mode. Verify the WiFi connection and try again')
 
-        # if wait_for_state:
-        #     REPS = 20
-        #     for i in range(REPS):
-        #         if self.__get_current_state():
-        #             t = i / REPS  # in seconds
-        #             self.LOGGER.debug(f"'.connect()' received first state packet after {t} seconds")
-        #             break
-        #         time.sleep(1 / REPS)
-
-        #     if not self.__get_current_state():
-        #         self.LOGGER.warning('Did not receive a state packet from the Tello')
-
-    # ToDo Update state
-    def __get_current_state(self) -> dict:
+    def get_current_state(self) -> dict:
         """Call this function to obtain the state of the Tello Drone. 
-        
+
         :return (dict): Dictorionary with all Tello State fields.
         """
         return self.__get_own_udp_object()['state']
@@ -348,11 +339,11 @@ class Tello:
 
         while True:
             try:
-                #if self.client_socket_up == True:
+                # if self.client_socket_up == True:
                 response, address = state_socket.recvfrom(1024)
 
                 address = address[0]
-                self.LOGGER.debug(f'Data received from {address} at state socket')
+                #self.LOGGER.debug(f'Data received from {address} at state socket')
 
                 if address not in drones:
                     continue
@@ -363,18 +354,16 @@ class Tello:
             except Exception as e:
                 self.LOGGER.error(e)
                 break
-            time.sleep(0.2)
 
-    def __state_parse(state: str) -> Dict[str, Union[int, float, str]]:
+    def __state_parse(self, state: str) -> Dict[str, Union[int, float, str]]:
         """Parse a state line to a dictionary
 
         Raw Data String format from Tello State:
             “pitch:%d;roll:%d;yaw:%d;vgx:%d;vgy%d;vgz:%d;templ:%d;temph:%d;tof:%d;h:%d;bat:%d;baro:%.2f; time:%d;agx:%.2f;agy:%.2f;agz:%.2f;\r\n”
         """
 
-        # clean up spaces and \r\n
-        state = state.strip()
-        self.LOGGER.debug(f'Raw state data: {state}')
+        state = state.strip()  # clean up spaces and \r\n
+        # self.LOGGER.debug(f'Raw state data: {state}')
 
         if state == 'ok':
             return {}
@@ -393,12 +382,12 @@ class Tello:
                 try:
                     value = num_type(value)
                 except ValueError as e:
-                    self.LOGGER.error(f'Error parsing state value for {key}: {value} to {num_type}')
+                    self.LOGGER.error(
+                        f'Error parsing state value for {key}: {value} to {num_type}')
                     self.LOGGER.error(e)
                     continue
 
             state_dict[key] = value
-
         return state_dict
 
     def __check_sdk_mode(self):
@@ -419,7 +408,7 @@ class Tello:
         if self.sdk_version == version:
             pass
         else:
-            message = f'Unsupported function for the current SDK version {self.sdk_version}'
+            message = f'Unsupported function for the current SDK version: {self.sdk_version}'
             self.LOGGER.error(message)
             raise ValueError(message)
 
@@ -458,7 +447,7 @@ class Tello:
 
         self.LOGGER.error(f'Failure to send control command {field}')
 
-    def get_speed(self):
+    def get_current_set_speed(self):
         """
         Obtain set speed (cm/s) (This is not the current speed)
 
@@ -480,7 +469,7 @@ class Tello:
                 return -1
         except:
             self.__read_command_fail(field)
-    
+
     def get_battery(self):
         """
         Obtain current battery percentage
@@ -557,7 +546,7 @@ class Tello:
         Obtain the Tello SDK version
 
         :return (int): sdk version.
-        
+
         SDK version can be 20 for 2.0 or 30 for 3.0
         """
 
@@ -599,7 +588,7 @@ class Tello:
                 return -1
         except:
             self.__read_command_fail(field)
-    
+
     def get_hardware(self):
         """
         Get hardware type.
@@ -617,7 +606,7 @@ class Tello:
             self.__check_sdk_version(30)
 
             hardware = self.__send_command_and_return('hardware?')
-            
+
             try:
                 hardware = str(hardware)
                 return hardware
@@ -644,7 +633,7 @@ class Tello:
             self.__check_hardware('RMTT')
 
             wifi_version = self.__send_command_and_return('wifiversion?')
-            
+
             try:
                 wifi_version = str(wifi_version)
                 return wifi_version
@@ -653,7 +642,7 @@ class Tello:
                 return -1
         except:
             self.__read_command_fail(field)
-    
+
     def get_ap(self):
         """
         Get the name and password of the current router to be connected. (Only applies to 'Robomaster TT')
@@ -669,7 +658,7 @@ class Tello:
             self.__check_hardware('RMTT')
 
             ap = self.__send_command_and_return('ap?')
-            
+
             try:
                 ap = str(ap)
                 return ap
@@ -694,7 +683,7 @@ class Tello:
             self.__check_hardware('RMTT')
 
             ssid = self.__send_command_and_return('ssid?')
-            
+
             try:
                 ssid = str(ssid)
                 return ssid
@@ -703,7 +692,7 @@ class Tello:
                 return -1
         except:
             self.__read_command_fail(field)
-    
+
     def set_speed(self, speed=SET_SPEED["mid"]):
         """Set the current speed (cm/s) in range from 10 to 100
 
@@ -753,7 +742,7 @@ class Tello:
             self.mission_mode_enable = True
         except:
             self.__set_command_fail(field)
-    
+
     def set_mission_off(self):
         """Disable mission pad detection
         """
@@ -791,9 +780,11 @@ class Tello:
 
             if direction in self.MISSION_DETECTION_DIRECTION:
                 if self.mission_mode_enable:
-                    self.__send_command_and_return(f'mdirection {self.MISSION_DETECTION_DIRECTION[direction]}')
+                    self.__send_command_and_return(
+                        f'mdirection {self.MISSION_DETECTION_DIRECTION[direction]}')
                 else:
-                    self.LOGGER.error("Perform set_mission_on() before set this command")
+                    self.LOGGER.error(
+                        "Perform set_mission_on() before set this command")
             else:
                 self.__invalid_option(options)
         except:
@@ -905,7 +896,8 @@ class Tello:
             self.__check_sdk_version(30)
             bitrate = str(bitrate)
             if bitrate in self.SET_BITRATE:
-                self.__send_command_and_return(f'setbitrate {self.SET_BITRATE[bitrate]}')
+                self.__send_command_and_return(
+                    f'setbitrate {self.SET_BITRATE[bitrate]}')
             else:
                 self.__invalid_option(options)
         except:
@@ -1013,7 +1005,7 @@ class Tello:
         """Logs options
         """
         self.LOGGER.error(f'Invalid parameter. {options}')
-    
+
     def __check_in_range(self, value, range):
         """Check if value is on range
 
@@ -1054,7 +1046,7 @@ class Tello:
                 self.__value_out_range(self.DISTANCE_RANGE)
         except:
             self.__control_command_fail(field)
-    
+
     def move_left(self, distance):
         """Fly left given distance in centimeters
         """
@@ -1084,7 +1076,7 @@ class Tello:
                 self.__value_out_range(self.DISTANCE_RANGE)
         except:
             self.__control_command_fail(field)
-    
+
     def move_forward(self, distance):
         """Moves forward given distance in centimeters
         """
@@ -1094,12 +1086,13 @@ class Tello:
         try:
             self.__check_sdk_mode()
             if self.__check_in_range(distance, self.DISTANCE_RANGE):
-                response = self.__send_command_and_return(f'forward {distance}')
+                response = self.__send_command_and_return(
+                    f'forward {distance}')
             else:
                 self.__value_out_range(self.DISTANCE_RANGE)
         except:
             self.__control_command_fail(field)
-    
+
     def move_backward(self, distance):
         """Moves backward given distance in centimeters
         """
@@ -1114,8 +1107,8 @@ class Tello:
                 self.__value_out_range(self.DISTANCE_RANGE)
         except:
             self.__control_command_fail(field)
-    
-    def move_clockwise(self, angle):
+
+    def rotate_clockwise(self, angle):
         """Rotates clockwise given angle in degrees
         """
 
@@ -1123,14 +1116,14 @@ class Tello:
 
         try:
             self.__check_sdk_mode()
-            if self.__check_in_range(distance, self.ANGLE_RANGE):
-                response = self.__send_command_and_return(f'cw {distance}')
+            if self.__check_in_range(angle, self.ANGLE_RANGE):
+                response = self.__send_command_and_return(f'cw {angle}')
             else:
                 self.__value_out_range(self.ANGLE_RANGE)
         except:
             self.__control_command_fail(field)
-    
-    def move_counterclockwise(self, angle):
+
+    def rotate_counterclockwise(self, angle):
         """Rotates counterclockwise given angle in degrees
         """
 
@@ -1138,8 +1131,8 @@ class Tello:
 
         try:
             self.__check_sdk_mode()
-            if self.__check_in_range(distance, self.ANGLE_RANGE):
-                response = self.__send_command_and_return(f'ccw {distance}')
+            if self.__check_in_range(angle, self.ANGLE_RANGE):
+                response = self.__send_command_and_return(f'ccw {angle}')
             else:
                 self.__value_out_range(self.ANGLE_RANGE)
         except:
@@ -1161,12 +1154,13 @@ class Tello:
         try:
             self.__check_sdk_mode()
             if direction in self.FLIP_DIRECTION:
-                self.__send_command_and_return(f'flip {self.FLIP_DIRECTION[direction]}')
+                self.__send_command_and_return(
+                    f'flip {self.FLIP_DIRECTION[direction]}')
             else:
                 self.__invalid_option(options)
         except:
             self.__control_command_fail(field)
-    
+
     def go_to(self, x, y, z, speed):
         """Fly to given coordinates at given speed.
 
@@ -1198,8 +1192,265 @@ class Tello:
 
         field = "hover"
 
-        #try:
+        # try:
         #    self.__check_sdk_mode()
         #    self.__send_command_and_return(f'stop')
-        #except:
+        # except:
         #    self.__control_command_fail(field)
+
+    def __get_state_field(self, key):
+        """Generic method to filter one specific internal
+        parameter from Drone State
+
+        :param key: key or keys to be filter in drone state dictionary
+
+        :return values: collection/individual value of the given key(s)
+        :type values: tuple
+        """
+
+        state = self.get_current_state()
+
+        if key in state:
+            return state[key]
+        else:
+            self.LOGGER.error(f'Could not get state property: {key}')
+
+    def __get_collection_state_fields(self, keys):
+        """Generic method to filter one specific internal
+        parameter from Drone State
+
+        :param key: key or keys to be filter in drone state dictionary
+
+        :return values: collection/individual value of the given key(s)
+        :type values: tuple
+        """
+
+        state = self.get_current_state()
+
+        values = []
+
+        for key in keys:
+            if key in state:
+                values.append(state[key])
+            else:
+                self.LOGGER.error(f'Could not get state property: {key}')
+        return values
+
+    def get_pad_id(self):
+        """Get ID of the detected mission pad
+
+        If the mission pad detection function is not enabled, -2 is returned.
+        If the detection function is enabled but no mission pad is detected, -1 is returned
+        """
+        self.__check_sdk_mode()
+        return self.__get_state_field('mid')
+
+    def get_x(self):
+        """Get the x-axis coordinate of the drone 
+        relative to the detected mission pad, in centimeters
+
+        If the mission pad detection function is not enabled, -200 is returned
+        If the detection function is enabled but no mission pad is detected, -100 is returned.
+        """
+        self.__check_sdk_mode()
+        return self.__get_state_field('x')
+
+    def get_y(self):
+        """Get the y-axis coordinate of the drone 
+        relative to the detected mission pad, in centimeters
+
+        If the mission pad detection function is not enabled, -200 is returned
+        If the detection function is enabled but no mission pad is detected, -100 is returned.
+        """
+        self.__check_sdk_mode()
+        return self.__get_state_field('y')
+
+    def get_z(self):
+        """Get the z-axis coordinate of the drone 
+        relative to the detected mission pad, in centimeters
+
+        If the mission pad detection function is not enabled, -200 is returned
+        If the detection function is enabled but no mission pad is detected, -100 is returned.
+        """
+        self.__check_sdk_mode()
+        return self.__get_state_field('z')
+
+    def get_pad_coord(self):
+        """Get **list** of coordinates in format [x, y, z] of the drone 
+        relative to the detected mission pad, in **centimeters (int)**
+
+        :return: values
+        :type: list
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_collection_state_fields(['x', 'y', 'z'])
+
+    def get_pad_orientation(self):
+        """Get **list** of angles in format [roll, pitch, yaw] of the drone 
+        relative to the detected mission pad, in **degrees (int)**
+        """
+        self.__check_sdk_mode()
+
+        responses = self.__get_state_field('mpry')
+
+        values = []
+
+        for value in responses.split(','):
+            values.append(int(value))
+        return values
+
+    def get_pitch(self):
+        """Get pitch in degrees
+
+        :return: value
+        """
+        return self.__get_state_field('pitch')
+
+    def get_roll(self):
+        """Get roll in degrees
+
+        :return: value
+        """
+        return self.__get_state_field('roll')
+
+    def get_yaw(self):
+        """Get yaw in degrees
+
+        :return: value
+        """
+        return self.__get_state_field('yaw')
+
+    def get_orientation(self):
+        """Get **list** of angles in format [roll, pitch, yaw]
+        relative to the initial orientation at the moment of turn on the drone.
+
+        :return: values
+        :type: list
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_collection_state_fields(['roll', 'pitch', 'yaw'])
+
+    def get_speed_x(self):
+        """Get x-axis speed in m/s
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('vgx')
+
+    def get_speed_y(self):
+        """Get y-axis speed in m/s
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('vgy')
+
+    def get_speed_z(self):
+        """Get z-axis speed in m/s
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('vgz')
+
+    def get_speed(self):
+        """Get **list** of linear velocities in format [vel_x, vel_y, vel_z].
+
+        :return: values
+        :type: list
+        """
+        self.__check_sdk_mode()
+        return self.__get_collection_state_fields(['vgx', 'vgy', 'vgz'])
+
+    def get_min_temp(self):
+        """Get the minimum temperature of the main board in degrees celsius
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('templ')
+
+    def get_min_temp(self):
+        """Get the minimum temperature of the main board in degrees celsius
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('templ')
+
+    def get_max_temp(self):
+        """Get the maximum temperature of the main board in degrees celsius
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('temph')
+
+    def get_tof_distance(self):
+        """Get ToF distance in cm
+
+        :return distance: value de ToF sensor. Return 0 if sensor is out of range
+        """
+
+        self.__check_sdk_mode()
+
+        # ToF sensor in the drone return 6553
+        # if sensor reading is out of "maximun" range
+        max_value_error = 6553
+
+        # ToF sensor in the drone return 10
+        # if sensor reading is out of "minimun" range
+        min_value_error = 10
+
+        distance = self.__get_state_field('tof')
+
+        if distance == max_value_error or distance == min_value_error:
+            distance = 0
+
+        return distance
+
+    def get_bat(self):
+        """Get Percentage of current remaining battery capacity
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('bat')
+
+    def get_baro(self):
+        """Get height detected by barometer in meters
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('baro')
+
+    def get_time(self):
+        """Get motor running time in seconds
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('time')
+
+    def get_acc_x(self):
+        """Get x-axis acceleration cm/s2
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('agx')
+
+    def get_acc_y(self):
+        """Get y-axis acceleration cm/s2
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('agy')
+
+    def get_acc_z(self):
+        """Get z-axis acceleration cm/s2
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_state_field('agz')
+
+    def get_acceleration(self):
+        """Get x y and z acceleration cm/s2
+        """
+
+        self.__check_sdk_mode()
+        return self.__get_collection_state_fields(['agx', 'agy', 'agz'])
