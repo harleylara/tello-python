@@ -145,6 +145,17 @@ class Tello:
         500
     )
 
+    MISSION_PAD_IDs = {
+        1: 'm1',
+        2: 'm2',
+        3: 'm3',
+        4: 'm4',
+        5: 'm5',
+        6: 'm6',
+        7: 'm7',
+        8: 'm8',
+    }
+
     def __init__(self, tello_ip=TELLO_IP, retry_count=RETRY_COUNT):
         """
         Tello object initialization
@@ -249,7 +260,7 @@ class Tello:
         tello_ip = self.address[0]
         return drones[tello_ip]
 
-    def send_control_command(self, command: str, timeout: int = TIMEOUT) -> bool:
+    def send_command(self, command: str, timeout: int = TIMEOUT) -> bool:
         """Send control command to Tello and wait for its response.
         """
         response = "max retries exceeded"
@@ -270,7 +281,7 @@ class Tello:
         """
 
         self.LOGGER.debug('Initiate SDK mode')
-        response = self.send_control_command("command")
+        response = self.send_command("command")
 
         if response == True:
             self.sdk_mode_enable = True
@@ -1199,6 +1210,49 @@ class Tello:
             elif (_2 and _3 and _4) == False:
                 self.LOGGER.error('Coordinates out of range.')
                 self.__value_out_range(self.COORDINATES_RANGE)
+        except:
+            self.__control_command_fail(field)
+
+    def go_to_pad(self, x, y, z, speed, pad):
+        """Fly to given coordinates in the coordinate
+        system of the mission pad with the specified ID at given speed.
+
+        The coordinates are relative to the given mission pad ID.
+        """
+
+        field = "go to pad"
+
+        options = """
+        Options:    
+            1 - Mission pad with number 1
+            2 - Mission pad with number 2
+            3 - Mission pad with number 3
+            4 - Mission pad with number 4
+            5 - Mission pad with number 5
+            6 - Mission pad with number 6
+            7 - Mission pad with number 7
+            8 - Mission pad with number 8"""
+
+        try:
+            self.__check_sdk_mode()
+
+            if pad in self.MISSION_PAD_IDs:
+                _1 = self.__check_in_range(speed, self.SPEED_RANGE)
+                _2 = self.__check_in_range(x, self.COORDINATES_RANGE)
+                _3 = self.__check_in_range(y, self.COORDINATES_RANGE)
+                _4 = self.__check_in_range(z, self.COORDINATES_RANGE)
+
+                if (_1 and _2 and _3 and _4):
+                    self.__send_command_and_return(
+                        f'go {x} {y} {z} {speed} {self.MISSION_PAD_IDs[pad]}')
+                elif _1 == False:
+                    self.__value_out_range(self.SPEED_RANGE, 'speed')
+                elif (_2 and _3 and _4) == False:
+                    self.LOGGER.error('Coordinates out of range.')
+                    self.__value_out_range(self.COORDINATES_RANGE)
+            else:
+                self.LOGGER.error('Invalid pad ID')
+                self.__invalid_option(options)
         except:
             self.__control_command_fail(field)
 
