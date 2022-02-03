@@ -156,6 +156,11 @@ class Tello:
         8: 'm8',
     }
 
+    CAMERA_DIRECTION = {
+        'forward': '0',  # default
+        'downward': '1'
+    }
+
     def __init__(self, tello_ip=TELLO_IP, retry_count=RETRY_COUNT):
         """
         Tello object initialization
@@ -934,6 +939,28 @@ class Tello:
 
             if resolution in self.SET_RESOLUTION:
                 self.__send_command_and_return(f'setresolution {resolution}')
+            else:
+                self.__invalid_option(options)
+        except:
+            self.__set_command_fail(field)
+
+    def set_video_direction(self, direction):
+        """Switch camera source for video streaming
+        """
+
+        options = """
+        Options:
+            "forward"   - Switches video streaming to the forward camera
+            "downward"  - Switches video streaming to the forward camera"""
+
+        field = "camera direction"
+
+        try:
+            self.__check_sdk_mode()
+            self.__check_sdk_version(30)
+
+            if direction in self.CAMERA_DIRECTION:
+                self.__send_command_and_return(f'downvision  {direction}')
             else:
                 self.__invalid_option(options)
         except:

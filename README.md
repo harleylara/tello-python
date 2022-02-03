@@ -1,4 +1,4 @@
-# Tello SDK 2.0 - Python Wrapper
+# Tello Drone - Python Wrapper
 
 [Tello SDK 2.0 Official User Guide](https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf)
 
@@ -26,8 +26,8 @@ drone.connect()
 
 - `takeoff()`
 - `land()`
-- `streamon()`
-- `streamoff()`
+- `stream_on()`
+- `stream_off()`
 - `emergency()`
 - `reboot()` only SDK 3.0
 - `move_up(distance(in centimeters from 20 to 500))`
@@ -66,6 +66,8 @@ drone.connect()
     - only supported on SDK 3.0
 - `set_resolution("high")` can be "high" or "low", indicating 720P and 480P, respectively
     - parameters: `resolution`
+    - only supported on SDK 3.0
+- set_video_direction('forward'/'downward' )
     - only supported on SDK 3.0
 
 ### Read Commands
