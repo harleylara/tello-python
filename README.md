@@ -69,33 +69,20 @@ drone.land()
 ## Set Commnands
 ---
 
-- `set_speed(50)`
-    - parameters: `speed` (int) from 10 to 100
-- `set_wifi('WIFI-name'(without spaces), 'pass')`
-    - parameters: `ssid`, `password`
-- `set_mission_on()`
-- `set_mission_off()`
-- `set_mission_detection('downward')`
-    - parameters: `direction` 0: downward detection enabled. 1: forward detection enabled. 2: both forward and downward detection enabled
-- `set_ap('Access point name', 'pass')`
-    - parameters: `ssid`, `password`
-- `set_wifi_channerl(channel)` (Only for Robotmaster TT hardware)
-    - parameters: `channel`
-    - only supported on SDK 3.0
-- `set_video_port(info='1234', video='5678')`
-    - parameters: `info`, `video`
-    - only supported on SDK 3.0
-- `set_fps("high")` can be `"high"`, `"middle"`, or `"low"`, indicating 30fps, 15fps, and 5fps, respectively
-    - parameters: `fps`
-    - only supported on SDK 3.0
-- `set_bitrate('auto')`
-    - parameters: `bitrate` options: 'auto', '1', '2', '3', '4', '5' indicating 1Mbps, 2MBps, 3Mbps, 4Mbps, and 5Mbps
-    - only supported on SDK 3.0
-- `set_resolution("high")` can be "high" or "low", indicating 720P and 480P, respectively
-    - parameters: `resolution`
-    - only supported on SDK 3.0
-- `set_video_direction('forward'/'downward' )`
-    - only supported on SDK 3.0
+| Function                           | Description                                                                                                                                                                                                                                                                                                                                                                                              | SDK 2.0 | SDK 3.0 |
+|------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|---------|
+| `set_speed(speed)`                 | Set the current speed to `speed` in cm/s <br> Parameters: <br> - `speed(int)` from 10 to 100                                                                                                                                                                                                                                                                                                             | ✅       | ✅       |
+| `set_wifi(ssid, password)`         | Change WiFi name and password <br> Parameters: <br> - `ssid(str)` WiFi name without spaces <br> - `password(str) ` password to connect WiFi                                                                                                                                                                                                                                                              | ✅       | ✅       |
+| `set_mission_on()`                 | Enables mission pad. By default, downward detection is enabled                                                                                                                                                                                                                                                                                                                                           | ✅       | ✅       |
+| `set_mission_off()`                | Disables mission pad detection.                                                                                                                                                                                                                                                                                                                                                                          | ✅       | ✅       |
+| `set_mission_detection(direction)` | Define Before use, you must use the `set_mission_on()` to enable the detection function <br>  Parameters: <br> - `direction(str)` can be `"forward"`, `"downward"` or `"both"`. <br> When either forward-looking or downward-looking detection is enabled alone, the detection frequency is 20Hz. If both enabled, detection will be performed alternatively, with a frequency of 10Hz in each direction | ✅       | ✅       |
+| `set_ap(ssid, password)`           | Switch Tello to "Station mode" and connect to WiFi access point <br>  Parameters: <br> - `ssid(str)` WiFi SSID <br> - `password(str)` password to connect WiFi                                                                                                                                                                                                                                           | ✅       | ✅       |
+| `set_wifi_channel(channel)`        | Set the WiFi channel of the open-source controller. (Only for Robotmaster TT hardware)                                                                                                                                                                                                                                                                                                                   |         | ✅       |
+| `set_video_port(info, video)`      | Set the ports for pushing state information and video streams. Here, `info` is the port for pushing state information, and `video` is the port for pushing video streaming. The range of ports is 1025 to 65535.<br> Parameters: <br> - `info(str)` drone state port <br> - `video(str)` video streaming port                                                                                            |         | ✅       |
+| `set_fps(fps)`                     | Set the video stream frame rate. <br> Parameters: <br> - `fps(str)` can be `"high"`, `"middle"`, or `"low"`, indicating `30fps`, `15fps`, and `5fps`, respectively                                                                                                                                                                                                                                       |         | ✅       |
+| `set_bitrate(bitrate)`             | Set the video stream bit rate. <br> Parameters: <br> - `bitrate(str)` can be `'auto'`, `'1'`, `'2'`, `'3'`, `'4'`, `'5'` indicating `1Mbps`, `2MBps`, `3Mbps`, `4Mbps`, and `5Mbps`                                                                                                                                                                                                                      |         | ✅       |
+| `set_resolution(resolution)`       | Set the video stream resolution. <br> Parameters: <br> - `resolution(str)` can be `"high"` or `"low"`, indicating `720P` and `480P`, respectively                                                                                                                                                                                                                                                        |         | ✅       |
+| `set_video_direction(direction)`   | Switch camera source for video streaming <br> Parameters: <br> - `direction(str)` can be `"forward"` or `"downward"`                                                                                                                                                                                                                                                                                     |         | ✅       |
 
 ## Read Commands
 ---
