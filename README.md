@@ -11,19 +11,27 @@ Features:
 ## Install
 
 ```bash
-./install.sh
+sudo python setup.py install
 ```
 
 ## Usage
 
 ```python
 from tello import Tello
+import time
 
 # create drone object
 drone = Tello()
 
 # Connect drone
 drone.connect()
+# takeoff
+drone.takeoff()
+# wait 2 secs
+time.sleep(2)
+# land
+drone.land()
+
 ```
 
 ## Control Commands
@@ -38,9 +46,9 @@ drone.connect()
 | `stream_off()`                                 | Disables video stream.                                                                                                                                                                                              | ✅       | ✅       |
 | `emergency()`                                  | Stop Motors immediately.                                                                                                                                                                                            | ✅       | ✅       |
 | `reboot()`                                     | Reboot the drone.                                                                                                                                                                                                   |         | ✅       |
-| ❗`motor_on()`                                  |                                                                                                                                                                                                                     |         | ✅       |
-| ❗`motor_off()`                                 |                                                                                                                                                                                                                     |         | ✅       |
-| ❗`throw_fly()`                                 |                                                                                                                                                                                                                     |         | ✅       |
+| `motor_on()`                                   | Start the motors at low speed and enter in Motor-On mode                                                                                                                                                            |         | ✅       |
+| `motor_off()`                                  | Exit Motor-On mode.                                                                                                                                                                                                 |         | ✅       |
+| `throw_and_fly()`                              | Launch the drone horizontally within 5s right after executing this function.                                                                                                                                        |         | ✅       |
 | `move_up(distance)`                            | Ascend given distance. <br> Parameters: <br> - `distance(int)` in centimeters from 20 to 500                                                                                                                        | ✅       | ✅       |
 | `move_down(distance)`                          | Descend given distance. <br> Parameters: <br> - `distance(int)` in centimeters from 20 to 500                                                                                                                       | ✅       | ✅       |
 | `move_left(distance)`                          | Fly left given distance. <br> Parameters: <br> - `distance(int)` in centimeters from 20 to 500                                                                                                                      | ✅       | ✅       |

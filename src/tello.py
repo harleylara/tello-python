@@ -1113,6 +1113,46 @@ class Tello:
         except:
             self.__control_command_fail(command)
 
+    def motor_on(self):
+        """Start the motors at low speed and enter in Motor-On mode
+        """
+
+        field = "motor on"
+
+        try:
+            self.__check_sdk_mode()
+            self.__check_sdk_version(30)
+            self.__send_command_and_return(f'motoron')
+        except:
+            self.__control_command_fail(field)
+
+    def motor_off(self):
+        """Exit Motor-On mode.
+        """
+
+        field = "motor off"
+
+        try:
+            self.__check_sdk_mode()
+            self.__check_sdk_version(30)
+            self.__send_command_and_return(f'motoroff')
+        except:
+            self.__control_command_fail(field)
+
+    def throw_and_fly(self):
+        """Launch the drone horizontally within 5s 
+        right after executing this function
+        """
+
+        field = "throw and fly"
+
+        try:
+            self.__check_sdk_mode()
+            self.__check_sdk_version(30)
+            self.__send_command_and_return(f'throwfly')
+        except:
+            self.__control_command_fail(field)
+
     def __value_out_range(self, range, value_name=''):
         """Logs out of range message
         """
