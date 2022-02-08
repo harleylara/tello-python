@@ -1,8 +1,12 @@
-# Tello Drone - Python Wrapper
+# Tello Drones - Python Wrapper
 
-[Tello SDK 2.0 Official User Guide](https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf)
-
-[Robomaster TT SDK 3.0 Offial User Guide](https://dl.djicdn.com/downloads/RoboMaster+TT/Tello_SDK_3.0_User_Guide_en.pdf)
+Features:
+- Support: **Tello**, **Tello EDU**, **Robomaster TT** (partially, functions for the ESP32 open-source controller not implemented)
+- Support: **SDK 2.0** and **SDK 3.0**
+- High level functions
+- Low level SDK commands using `send_command()`
+- Detection of out-of-range values
+- User-friendly logs
 
 ## Install
 
@@ -22,25 +26,40 @@ drone = Tello()
 drone.connect()
 ```
 
-### Control Commands
+## Control Commands
+---
 
-- `takeoff()`
-- `land()`
-- `stream_on()`
-- `stream_off()`
-- `emergency()`
-- `reboot()` only SDK 3.0
-- `move_up(distance(in centimeters from 20 to 500))`
-- `move_down(distance(in centimeters from 20 to 500))`
-- `move_left(distance(in centimeters from 20 to 500))`
-- `move_forward(distance(in centimeters from 20 to 500))`
-- `move_backward(distance(in centimeters from 20 to 500))`
-- `rotate_clockwise(degrees(in degrees from 1 to 360))`
-- `rotate_counterclockwise(degrees(in degrees from 1 to 360))`
-- `flip('right'/'left'etc)`
-- `go_to(x, y, z, speed)`
+| Function                                       | Description                                                                                                                                                                                                         | SDK 2.0 | SDK 3.0 |
+|------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|---------|
+| `connect()`                                    | Initializes the connection to the drone.                                                                                                                                                                            | ✅       | ✅       |
+| `takeoff()`                                    | Auto takeoff.                                                                                                                                                                                                       | ✅       | ✅       |
+| `lan()`                                        | Auto land.                                                                                                                                                                                                          | ✅       | ✅       |
+| `stream_on()`                                  | Enables video stream.                                                                                                                                                                                               | ✅       | ✅       |
+| `stream_off()`                                 | Disables video stream.                                                                                                                                                                                              | ✅       | ✅       |
+| `emergency()`                                  | Stop Motors immediately.                                                                                                                                                                                            | ✅       | ✅       |
+| `reboot()`                                     | Reboot the drone.                                                                                                                                                                                                   |         | ✅       |
+| ❗`motor_on()`                                  |                                                                                                                                                                                                                     |         | ✅       |
+| ❗`motor_off()`                                 |                                                                                                                                                                                                                     |         | ✅       |
+| ❗`throw_fly()`                                 |                                                                                                                                                                                                                     |         | ✅       |
+| `move_up(distance)`                            | Ascend given distance. <br> Parameters: <br> - `distance(int)` in centimeters from 20 to 500                                                                                                                        | ✅       | ✅       |
+| `move_down(distance)`                          | Descend given distance. <br> Parameters: <br> - `distance(int)` in centimeters from 20 to 500                                                                                                                       | ✅       | ✅       |
+| `move_left(distance)`                          | Fly left given distance. <br> Parameters: <br> - `distance(int)` in centimeters from 20 to 500                                                                                                                      | ✅       | ✅       |
+| `move_right(distance)`                         | Fly right given distance. <br> Parameters: <br> - `distance(int)` in centimeters from 20 to 500                                                                                                                     | ✅       | ✅       |
+| `move_forward(distance)`                       | Fly forward given distance. <br> Parameters: <br> - `distance(int)` in centimeters from 20 to 500                                                                                                                   | ✅       | ✅       |
+| `move_backward(distance)`                      | Moves backward given distance. <br> Parameters: <br> - `distance(int)` in centimeters from 20 to 500                                                                                                                | ✅       | ✅       |
+| `rotate_clockwise(angle)`                      | Rotates clockwise given angle. <br> Parameters: <br> - `angle(int)` in degrees from 1 to 360                                                                                                                        | ✅       | ✅       |
+| `rotate_counterclockwise(angle)`               | Rotates counterclockwise given angle. <br> Parameters: <br> - `angle(int)` in degrees from 1 to 360                                                                                                                 | ✅       | ✅       |
+| `flip(direction)`                              | Flip given direction. <br> Parameters: <br> - `direction(str)` can be `'right'`, `'left'`, `'forward'` and `'backward'`                                                                                             | ✅       | ✅       |
+| `go_to(x, y, z, speed)`                        | Fly to given coordinates<sup>[1](#f1)</sup> at given speed . <br> Parameters: <br> - `x(int)` from -500 to 500 <br> - `y(int)` from -500 to 500 <br> - `z(int)` from -500 to 500 <br> - `speed(int)` from 10 to 100 | ✅       | ✅       |
+| `joystick_control(roll, pitch, yaw, throttle)` | Sends joystick control commands. <br> Parameters: <br> - `roll(int)` from -100 to 100 <br> - `pitch(int)` from -100 to 100 <br> - `yaw(int)` from -100 to 100 <br> - `throttle(int)` from -100 to 100               | ✅       | ✅       |
 
-### Set Commnands
+<a id="f1">1</a> coordinate system in relation to a body and the nose pointing forward:
+- `x` left
+- `y` backward
+- `x` down
+
+## Set Commnands
+---
 
 - `set_speed(50)`
     - parameters: `speed` (int) from 10 to 100
@@ -67,10 +86,11 @@ drone.connect()
 - `set_resolution("high")` can be "high" or "low", indicating 720P and 480P, respectively
     - parameters: `resolution`
     - only supported on SDK 3.0
-- set_video_direction('forward'/'downward' )
+- `set_video_direction('forward'/'downward' )`
     - only supported on SDK 3.0
 
-### Read Commands
+## Read Commands
+---
 
 | Function                  | Description                                                                                        | Return | SDK 2.0 | SDK 3.0 |
 |---------------------------|----------------------------------------------------------------------------------------------------|--------|---------|---------|
@@ -86,7 +106,8 @@ drone.connect()
 | `get_ssid()`              | Get the current SSID of the drone. (Only applies to 'Robomaster TT')                               | str    |         | ✅       |
 
 
-### Drone State
+## Drone State
+---
 
 | Function                                | Description                                                                                                                                                                                                                                                                                                                    | Return      | SDK 2.0 and 3.0 |
 |-----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|-----------------|
@@ -113,4 +134,14 @@ drone.connect()
 | `get_acc_z()`                           | Get z-axis acceleration cm/s2                                                                                                                                                                                                                                                                                                  | float       | ✅               |
 | `get_acceleration()`                    | Get **list** of accelerations for `x` `y` and `z` in format [acc_x, acc_y, acc_z] cm/s2                                                                                                                                                                                                                                        | list(float) | ✅               |
 
+## Video Functions
 
+| Function              | Description                              | SDK 2.0 and 3.0 |
+|-----------------------|------------------------------------------|-----------------|
+| `read_frame()`        | Read last frame from the video streaming | ✅               |
+| `bgr8_to_jpeg(value)` | Convert from `bgr8` to `jpeg`            | ✅               |
+
+## External Resources
+- [Tello SDK 2.0 - Official User Guide](https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf)
+- [ROBOMASTER TT SDK 3.0 - Official User Guide](https://dl.djicdn.com/downloads/RoboMaster+TT/Tello_SDK_3.0_User_Guide_en.pdf)
+- [Tello - User Guide](https://dl.djicdn.com/downloads/RoboMaster+TT/Tello_SDK_3.0_User_Guide_en.pdf)

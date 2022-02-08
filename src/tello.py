@@ -2,6 +2,7 @@ import socket
 from threading import Thread
 import logging
 import time
+import cv2
 from typing import Optional, Union, Type, Dict
 
 # Multi thread implementation
@@ -77,13 +78,23 @@ class Tello:
 
     LOGGER = logging.getLogger('tello-drone')
     LOGGER.addHandler(HANDLER)
-    LOGGER.setLevel(logging.DEBUG)
+    LOGGER.setLevel(logging.INFO)
+    # Logs options
+    LOG_LEVELS = {
+        'info': logging.INFO,
+        'debug': logging.DEBUG
+    }
 
     sdk_mode_enable = False
     # SDK version can be 20 for 2.0 or 30 for 3.0
     sdk_version = None
     # Hardware can be 'TELLO' or 'RMTT'
     hardware = None
+
+    VIDEO_STREAMING_PORT = 11111  # default video port
+    STREAMING_ENABLE = False
+    # stores individual frame
+    video_frame = None
 
     mission_mode_enable = False
     MISSION_DETECTION_DIRECTION = {
@@ -161,7 +172,12 @@ class Tello:
         'downward': '1'
     }
 
-    def __init__(self, tello_ip=TELLO_IP, retry_count=RETRY_COUNT):
+    JOYSTRICK_RANGE = {
+        -100,
+        100
+    }
+
+    def __init__(self, tello_ip=TELLO_IP, retry_count=RETRY_COUNT, log_level='info'):
         """
         Tello object initialization
 
@@ -181,6 +197,11 @@ class Tello:
         self.last_received_command_timestamp = time.time()
         self.last_rc_control_timestamp = time.time()
 
+        if log_level in self.LOG_LEVELS:
+            self.LOGGER.setLevel(self.LOG_LEVELS[log_level])
+        else:
+            self.LOGGER.info('Unknown log level, initialized INFO level')
+
         if not threads_initialized:
 
             # socket for sending cmd
@@ -197,6 +218,13 @@ class Tello:
         drones[tello_ip] = {'responses': [], 'state': {}}
         self.LOGGER.info(
             f"Tello instance was initialized. tello_ip: '{tello_ip}'. Port: '{self.TELLO_PORT}'.")
+
+    def __del__(self):
+        global client_socket
+
+        self.land()
+        self.stream_off()
+        client_socket.close()
 
     def __send_command_and_return(self, command: str, timeout: int = TIMEOUT):
         """
@@ -365,7 +393,7 @@ class Tello:
                     continue
 
                 response = response.decode('ASCII')
-                drones[address]['state'] = self.__state_parse(response)
+                drones[address]['state'] = self.__state_parse(str(response))
 
             except Exception as e:
                 self.LOGGER.error(e)
@@ -860,6 +888,7 @@ class Tello:
             self.__check_sdk_mode()
             self.__check_sdk_version(30)
             self.__send_command_and_return(f'port {info} {video}')
+            self.VIDEO_STREAMING_PORT = int(video)
         except:
             self.__set_command_fail(field)
 
@@ -1001,8 +1030,43 @@ class Tello:
             response = self.__send_command_and_return(f'streamon')
             if response:
                 self.LOGGER.info('Video stream enabled')
+                self.STREAMING_ENABLE = True
+
+                # thread for receiving video
+                self.video_receive_thread = Thread(
+                    target=self.__video_receive_thread)
+                self.video_receive_thread.daemon = True
+                self.video_receive_thread.start()
+            else:
+                self.LOGGER.error('Failure to start video streaming')
         except:
             self.__control_command_fail(field)
+
+    def __video_receive_thread(self):
+        """Read video streaming
+        """
+
+        input_str = f'udp://@{self.LOCAL_IP}:{self.VIDEO_STREAMING_PORT}'
+        cap = cv2.VideoCapture(input_str, cv2.CAP_FFMPEG)
+
+        while True:
+            re, frame = cap.read()
+            if not re:
+                pass
+            else:
+                self.video_frame = frame
+
+    def read_frame(self):
+        """Return last frame from __video_receive_thread
+        """
+        if self.STREAMING_ENABLE:
+            return self.video_frame
+        else:
+            self.LOGGER.error('Enable video stream first using stream_on() ')
+            return None
+
+    def bgr8_to_jpeg(value, quality=75):
+        return bytes(cv2.imencode('.jpg', value)[1])
 
     def stream_off(self):
         """Disables video stream
@@ -1015,6 +1079,9 @@ class Tello:
             response = self.__send_command_and_return(f'streamoff')
             if response:
                 self.LOGGER.info('Video stream disabled')
+                self.STREAMING_ENABLE = False
+            else:
+                self.LOGGER.error('Failure to shutdown video streaming')
         except:
             self.__control_command_fail(field)
 
@@ -1031,7 +1098,7 @@ class Tello:
             self.__control_command_fail(field)
 
     def reboot(self):
-        """Reboot the drone. No response from function.
+        """Reboot the drone. No response is expected.
         """
 
         global client_socket
@@ -1280,6 +1347,53 @@ class Tello:
             else:
                 self.LOGGER.error('Invalid pad ID')
                 self.__invalid_option(options)
+        except:
+            self.__control_command_fail(field)
+
+    def joystick_control(self, roll, pitch, yaw, throttle):
+        """Sends joystick control commands.
+
+        Set the lever force values for the four channels of the
+        remote control.
+
+        :param roll: value from -100 to 100
+        :param pitch: value from -100 to 100
+        :param yaw: value from -100 to 100
+        :param throttle: value from -100 to 100
+        """
+
+        global client_socket
+
+        options = """
+        Options
+            roll:       - value from -100 to 100 
+            pitch:      - value from -100 to 100
+            yaw:        - value from -100 to 100
+            throttle:   - value from -100 to 100
+        """
+
+        field = "joystick control"
+
+        try:
+            self.__check_sdk_mode()
+            _1 = self.__check_in_range(roll, self.JOYSTRICK_RANGE)
+            _2 = self.__check_in_range(pitch, self.JOYSTRICK_RANGE)
+            _3 = self.__check_in_range(yaw, self.JOYSTRICK_RANGE)
+            _4 = self.__check_in_range(throttle, self.JOYSTRICK_RANGE)
+
+            roll = int(roll)
+            pitch = int(pitch)
+            yaw = int(yaw)
+            throttle = int(throttle)
+
+            if (_1 and _2 and _3 and _4):
+                # Because this is a non-response command
+                # uses the socket directly
+                command = f'rc {roll} {pitch} {throttle} {yaw}'
+                client_socket.sendto(command.encode('utf-8'), self.address)
+            else:
+                self.__value_out_range(self.JOYSTRICK_RANGE)
+                self.LOGGER.error(options)
         except:
             self.__control_command_fail(field)
 
