@@ -172,10 +172,10 @@ class Tello:
         'downward': '1'
     }
 
-    JOYSTRICK_RANGE = {
+    JOYSTICK_RANGE = (
         -100,
         100
-    }
+    )
 
     def __init__(self, tello_ip=TELLO_IP, retry_count=RETRY_COUNT, log_level='info'):
         """
@@ -1416,10 +1416,10 @@ class Tello:
 
         try:
             self.__check_sdk_mode()
-            _1 = self.__check_in_range(roll, self.JOYSTRICK_RANGE)
-            _2 = self.__check_in_range(pitch, self.JOYSTRICK_RANGE)
-            _3 = self.__check_in_range(yaw, self.JOYSTRICK_RANGE)
-            _4 = self.__check_in_range(throttle, self.JOYSTRICK_RANGE)
+            _1 = self.__check_in_range(roll, self.JOYSTICK_RANGE)
+            _2 = self.__check_in_range(pitch, self.JOYSTICK_RANGE)
+            _3 = self.__check_in_range(yaw, self.JOYSTICK_RANGE)
+            _4 = self.__check_in_range(throttle, self.JOYSTICK_RANGE)
 
             roll = int(roll)
             pitch = int(pitch)
@@ -1432,7 +1432,7 @@ class Tello:
                 command = f'rc {roll} {pitch} {throttle} {yaw}'
                 client_socket.sendto(command.encode('utf-8'), self.address)
             else:
-                self.__value_out_range(self.JOYSTRICK_RANGE)
+                self.__value_out_range(self.JOYSTICK_RANGE)
                 self.LOGGER.error(options)
         except:
             self.__control_command_fail(field)
