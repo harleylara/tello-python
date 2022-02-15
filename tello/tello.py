@@ -849,7 +849,7 @@ class Tello:
 
         try:
             self.__check_sdk_mode()
-            self.__send_command_and_return(f'app {ssid} {password}')
+            self.__send_command_and_return(f'ap {ssid} {password}')
         except:
             self.__set_command_fail(field)
 
