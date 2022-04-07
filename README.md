@@ -64,7 +64,7 @@ drone.land()
 <a id="f1">1</a> coordinate system in relation to a body and the nose pointing forward:
 - `x` left
 - `y` backward
-- `x` down
+- `z` down
 
 ## Set Commnands
 ---
