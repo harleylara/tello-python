@@ -61,10 +61,10 @@ drone.land()
 | `go_to(x, y, z, speed)`                        | Fly to given coordinates<sup>[1](#f1)</sup> at given speed . <br> Parameters: <br> - `x(int)` from -500 to 500 <br> - `y(int)` from -500 to 500 <br> - `z(int)` from -500 to 500 <br> - `speed(int)` from 10 to 100 | ✅       | ✅       |
 | `joystick_control(roll, pitch, yaw, throttle)` | Sends joystick control commands. <br> Parameters: <br> - `roll(int)` from -100 to 100 <br> - `pitch(int)` from -100 to 100 <br> - `yaw(int)` from -100 to 100 <br> - `throttle(int)` from -100 to 100               | ✅       | ✅       |
 
-<a id="f1">1</a> coordinate system in relation to a body and the nose pointing forward:
-- `x` left
-- `y` backward
-- `z` down
+<a id="f1">1</a> coordinate system in relation to the body framw and the nose pointing forward:
+- `x` forward
+- `y` right
+- `z` up
 
 ## Set Commnands
 ---
