@@ -1389,6 +1389,53 @@ class Tello:
                 self.__invalid_option(options)
         except:
             self.__control_command_fail(field)
+ 
+    def jump_to_pad(self, x, y, z, speed, yaw, pad_1, pad_2):
+        """Fly to given coordinates in the coordinate
+        system of the mission pad with the specified ID pad_1 at given speed. Then detect mission pad with ID pad_2 and rotate by yaw degrees angle (0-360)
+        according the X axis of newly detected mission pad. 
+
+        The coordinates are relative to the mission pad with ID pad_1.
+        """
+
+        field = "jump to pad"
+
+        options = """
+        Options:    
+            1 - Mission pad with number 1
+            2 - Mission pad with number 2
+            3 - Mission pad with number 3
+            4 - Mission pad with number 4
+            5 - Mission pad with number 5
+            6 - Mission pad with number 6
+            7 - Mission pad with number 7
+            8 - Mission pad with number 8"""
+
+        try:
+            self.__check_sdk_mode()
+
+            if pad_1 in self.MISSION_PAD_IDs and pad_2 in self.MISSION_PAD_IDs:
+                _1 = self.__check_in_range(speed, self.SPEED_RANGE)
+                _2 = self.__check_in_range(x, self.COORDINATES_RANGE)
+                _3 = self.__check_in_range(y, self.COORDINATES_RANGE)
+                _4 = self.__check_in_range(z, self.COORDINATES_RANGE)
+                _5 = self.__check_in_range(yaw, self.ANGLE_RANGE)
+                
+                if (_1 and _2 and _3 and _4 and _5):
+                    self.__send_command_and_return(
+                        f'jump {x} {y} {z} {speed} {yaw} {self.MISSION_PAD_IDs[pad_1]} {self.MISSION_PAD_IDs[pad_2]}')
+                elif _1 == False:
+                    self.__value_out_range(self.SPEED_RANGE, 'speed')
+                elif _5 == False:
+                    self.__value_out_range(self.ANGLE_RANGE, 'yaw')
+                elif (_2 and _3 and _4) == False:
+                    self.LOGGER.error('Coordinates out of range.')
+                    self.__value_out_range(self.COORDINATES_RANGE)
+            else:
+                self.LOGGER.error('Invalid pad ID')
+                self.__invalid_option(options)
+        except:
+            self.__control_command_fail(field)
 
     def joystick_control(self, roll, pitch, yaw, throttle):
         """Sends joystick control commands.
