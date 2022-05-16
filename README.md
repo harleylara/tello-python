@@ -1,5 +1,7 @@
 # Tello Drones - Python Wrapper
 
+![Banner](./assets/tello-python-banner.jpg)
+
 Features:
 - Support: **Tello**, **Tello EDU**, **Robomaster TT** (partially, functions for the ESP32 open-source controller not implemented)
 - Support: **SDK 2.0** and **SDK 3.0**
